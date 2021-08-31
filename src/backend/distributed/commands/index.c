@@ -39,6 +39,7 @@
 #include "distributed/worker_manager.h"
 #include "lib/stringinfo.h"
 #include "miscadmin.h"
+#include "nodes/makefuncs.h"
 #include "nodes/parsenodes.h"
 #include "storage/lmgr.h"
 #include "utils/builtins.h"
@@ -217,7 +218,14 @@ PreprocessIndexStmt(Node *node, const char *createIndexCommand,
 	 */
 	SwitchToSequentialAndLocalExecutionIfIndexNameTooLong(createIndexStatement);
 
+	/* if this table is partitioned table, run CREATE INDEX ONLY */
+	if (PartitionedTable(relationId))
+	{
+		createIndexStatement->relation->inh = false;
+	}
+
 	DDLJob *ddlJob = GenerateCreateIndexDDLJob(createIndexStatement, createIndexCommand);
+	// createIndexStatement->relation->inh = true;
 	return list_make1(ddlJob);
 }
 
@@ -726,6 +734,37 @@ PostprocessIndexStmt(Node *node, const char *queryString)
 {
 	IndexStmt *indexStmt = castNode(IndexStmt, node);
 
+	Oid schemaId = get_namespace_oid(indexStmt->relation->schemaname, true);
+	Oid relationId = get_relname_relid(indexStmt->relation->relname, schemaId);
+
+	/* if this table is partitioned table, create indexes on partitions */
+	if (PartitionedTable(relationId))
+	{
+		List *partitionList = PartitionList(relationId);
+		Oid partitionRelationId = InvalidOid;
+		foreach_oid(partitionRelationId, partitionList)
+		{
+			//TODO: add some more checks here, like the checks in internal command of postgres
+			IndexStmt *indexStmtCopy = copyObject(indexStmt);
+			indexStmtCopy->idxname = NULL;
+			char *partitionNamespace = get_namespace_name(get_rel_namespace(partitionRelationId));
+			char *partitionName = get_rel_name(partitionRelationId);
+			indexStmtCopy->relation = makeRangeVar(partitionNamespace, partitionName, -1);
+			indexStmtCopy->relation->inh = false;
+
+			ProcessUtilityParseTree((Node *) indexStmtCopy, queryString, PROCESS_UTILITY_QUERY, NULL, None_Receiver, NULL);
+
+			// now we need to attach this index to parent index
+			//list all indexes of Parent (within transaction)
+			//list all indexes of Child
+			//double for loop: CompareIndexInfo
+
+
+			// attachindexparent(oid, oid);
+			// we can try CompareIndexInfo between all indexes of parent and all indexes of child
+		}
+	}
+
 	/* we are only processing CONCURRENT index statements */
 	if (!indexStmt->concurrent)
 	{
@@ -741,8 +780,8 @@ PostprocessIndexStmt(Node *node, const char *queryString)
 	/*
 	 * We make sure schema name is not null in the PreprocessIndexStmt
 	 */
-	Oid schemaId = get_namespace_oid(indexStmt->relation->schemaname, true);
-	Oid relationId = get_relname_relid(indexStmt->relation->relname, schemaId);
+	
+	
 	if (!IsCitusTable(relationId))
 	{
 		return NIL;
