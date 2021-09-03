@@ -448,16 +448,10 @@ ERROR:  unsupported access method for the index on columnar table brin_summarize
 CREATE TABLE parallel_scan_test(a int) USING columnar WITH ( parallel_workers = 2 );
 INSERT INTO parallel_scan_test SELECT i FROM generate_series(1,10) i;
 CREATE INDEX ON parallel_scan_test (a);
-NOTICE:  falling back to serial index build since parallel scan on columnar tables is not supported
 VACUUM FULL parallel_scan_test;
-NOTICE:  falling back to serial index build since parallel scan on columnar tables is not supported
 REINDEX TABLE parallel_scan_test;
-NOTICE:  falling back to serial index build since parallel scan on columnar tables is not supported
 CREATE INDEX CONCURRENTLY ON parallel_scan_test (a);
-NOTICE:  falling back to serial index build since parallel scan on columnar tables is not supported
 REINDEX TABLE CONCURRENTLY parallel_scan_test;
-NOTICE:  falling back to serial index build since parallel scan on columnar tables is not supported
-NOTICE:  falling back to serial index build since parallel scan on columnar tables is not supported
 -- test with different data types & indexAM's --
 CREATE TABLE hash_text(a INT, b TEXT) USING columnar;
 INSERT INTO hash_text SELECT i, (i*2)::TEXT FROM generate_series(1, 10) i;
