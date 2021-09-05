@@ -268,7 +268,9 @@ extern StripeMetadata * FindStripeByRowNumber(Relation relation, uint64 rowNumbe
 extern StripeMetadata * FindStripeWithMatchingFirstRowNumber(Relation relation,
 															 uint64 rowNumber,
 															 Snapshot snapshot);
-extern bool StripeIsFlushed(StripeMetadata *stripeMetadata);
+extern bool StripeWriteFlushed(StripeMetadata *stripeMetadata);
+extern bool StripeWriteAborted(StripeMetadata *stripeMetadata);
+extern bool StripeWriteInProgress(StripeMetadata *stripeMetadata);
 extern uint64 StripeGetHighestRowNumber(StripeMetadata *stripeMetadata);
 extern StripeMetadata * FindStripeWithHighestRowNumber(Relation relation,
 													   Snapshot snapshot);

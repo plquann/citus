@@ -550,7 +550,5 @@ ERROR:  duplicate key value violates unique constraint "aborted_write_test_pkey"
 DETAIL:  Key (a)=(16999) already exists.
 -- since second INSERT already failed, should not throw a "duplicate key" error
 REINDEX TABLE aborted_write_test;
-ERROR:  could not create unique index "aborted_write_test_pkey"
-DETAIL:  Key (a)=(16999) is duplicated.
 SET client_min_messages TO WARNING;
 DROP SCHEMA columnar_indexes CASCADE;

@@ -26,6 +26,7 @@ typedef struct StripeMetadata
 	uint64 rowCount;
 	uint64 id;
 	uint64 firstRowNumber;
+	bool aborted;
 } StripeMetadata;
 
 /*
